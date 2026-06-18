@@ -275,45 +275,37 @@ pick_and_place_node.py
 
 ## 🙋 내 주요 업무
 
-### 1. [M0609 동작 시퀀스 제작]
-> M0609 전체 플로우 동작 설정
-> 1. webcam을 이용하여 물체를 선택하거나, STT를 활용하여 물건 추천을 받음
-> 2. 선택된 물체의 x,y좌표까지 이동
-> 3. 매칭되어 있는 물체의 각도만큼 회전
-> 4. 깊이를 추정하여 필요한 깊이까지 내려감
-> 5. 그리퍼 닫기
-> 6. 그리퍼 올리기
-> 7. 잡은 물건 가방에 넣기
-> 8. 시행이 끝나고 홈으로 복귀 후, 새로운 명령 대기
+### 1. [손동작(MediaPipe) 기반 로봇 제어]
+> 웹캠 영상에서 MediaPipe로 손을 추적하여, 손동작만으로 협동로봇을 직접 제어하는 텔레오퍼레이션 기능 개발
+> 1. 웹캠에서 MediaPipe Hand Landmark(21개) 추적 → Index-tip / Palm-center 추출
+> 2. `WAITING → CALIBRATING → CONTROLLING ↔ PAUSED` 상태 머신으로 제어 흐름 관리
+> 3. 캘리브레이션 시점의 TCP를 기준점으로, 손 이동량(delta)을 로봇 목표 좌표로 변환
+> 4. 주먹(fist) / 검지 포인팅 등 제스처로 제어 시작·일시정지 전환
+> 5. `move_line` 서비스를 호출해 손 움직임을 로봇 동작으로 실시간 매핑 (~30 Hz)
+
+![mediapipe를 이용한 m0609 제어](./assets/손으로움직이기.gif)
+<p align="center">&lt;MediaPipe를 이용한 손동작 제어&gt;</p>
 
 ---
 
-### 2. [데이터 학습 및 Yolo모델 선정]
-- yolov8 ~ yolov12 까지의 모델을 비교
-- 프로젝트에 가장 적합하다고 판단이 든 모델을 쓰게끔 결정
-![yolo 모델 분석](assets/yolo.png)
-<p align="center">&lt;yolo 모델 분석&gt;</p>
+### 2. [작업공간 ㄹ자 스캔 알고리즘 제작]
+> 사용자가 "배고파" 등 추천을 요청하면, 로봇이 테이블 전체를 훑으며 물체를 탐색하는 스캔 기능 개발
+> 1. `/scan_request` 수신 → 스캔 시작
+> 2. 작업공간을 격자(nx × ny)로 나눠 **ㄹ자(지그재그) 경로**로 순차 이동
+> 3. 각 스캔 포즈에서 RealSense 컬러 이미지를 캡처하여 VLM(GPT-4o Vision)으로 물체 탐지
+> 4. 타겟 물체 발견 여부를 `/scan_result` 로 발행, 진행 상태를 `/scan_status` 로 실시간 발행
+> 5. 취소 요청 시 즉시 중단
+>
+> 테이블 전 영역을 한 시야에 담기 어려워, 지그재그 경로로 카메라를 분할 이동시키며 부분 시야를 누적해 전체를 커버하도록 설계.
 
 ---
 
-### 3. [물체의 각도 추정 알고리즘 제작]
-> realsense의 pointcloud를 이용하여 물체 각도 추정 전체 알고리즘
-> 1. RANSAC 알고리즘을 이용하여 바닥을 인식 / 바닥 지우기
-> 2. DBSCAN 알고리즘을 이용하여 pointcloud가 모여 있다면 하나의 물체로 인식
-> 3. z값들을 한 값으로 normalizaiton 실시 (각도를 구하는 것이므로 계산량 저하 및 직관적인 확인을 위해)
-> 4. concavehull 알고리즘을 이용하여 하나의 물체라 인식한 pointcloud 가장 바깥을 선으로 연결
-> 5. PCA를 이용하여 가장 긴 부분과 짧은 부분을 인식
-> 6. 길이가 가장 짧은 부분의 x축과 각도를 알아내어, 이를 yolo로 인식한 물체와 매칭시킴.
-
-![object_width_filter 아키텍처](./assets/object_width_filter_arch.png)
-<p align="center">&lt;object_width_filter 아키텍처&gt;</p>
-
----
-
-### 4. [외력감지, 비상정지 및 회복 알고리즘 제작]
+### 3. [외력감지, 비상정지 및 복구 알고리즘 제작 (초기 설계·프로토타입)]
+> 로봇의 이상 상태를 감지하고 동작을 안전하게 멈췄다가 복구하는 상태 제어 파이프라인의 초기 형태를 설계·구현
+>
 > **평상시** : `main_node`가 픽앤플레이스 전체 흐름을 관리하며 START/PAUSE/RESUME/STOP 명령을 발행
 >
-> **이상 감지 시** : `emergency_stop_node`가 0.3초마다 로봇 상태를 감시하다가 외력감지(노란 경고) / 비상정지(빨간 경고)를 감지하면 `main_node`에 이상 신호를 전달 → `main_node`가 동작을 일시정지 또는 중단
+> **이상 감지 시** : `emergency_stop_node`가 로봇 상태를 주기적으로 감시하다가 외력감지(Protective Stop, 노란 경고) / 비상정지(Emergency Stop, 빨간 경고)를 감지하면 `main_node`에 이상 신호를 전달 → `main_node`가 동작을 일시정지 또는 중단
 >
 > **복구 시** : 웹 대시보드 버튼 또는 손바닥 제스처로 복구 신호를 보내면 `exception_manager_node`가 로봇에 복구 명령을 전송하고 `main_node`에 정상 복귀 신호를 전달 → 픽앤플레이스 동작 재개
 
@@ -342,74 +334,18 @@ pick_and_place_node.py
 
 ---
 
-### 5. [손바닥 인식을 통한 M0609 동작]
-- mediapipe를 이용, 손가락 마디의 크기를 인식하여 손가락 마디의 크기가 작아지면 뒤로 움직이고 마디의 크기가 커지면 앞으로 움직이는 로직 개발
-  
-![mediapipe를 이용한 m0609 제어](./assets/손으로움직이기.gif)
-<p align="center">&lt;mediapipe를 이용한 m0609 제어&gt;</p>
-
----
-
-### 6. [깃허브 버젼 관리]
-- GitHub에서 전체적인 패키지와 모듈을 관리
-- 기존 메인 코드를 변경하기 전, 버젼으로 묶어서 관리
-
----
-
-### 7. [DOCKER 사용 및 배포]
-> alphashape, scikit-learn, ultralytics, mediapipe 등 다수의 라이브러리가 opencv 버전을 두고 충돌하는 문제를 해결하기 위해, `object_width_filter` 패키지를 Docker 이미지로 빌드하여 배포
-> 1. 충돌의 원인이 되는 `object_width_filter`를 독립된 Docker 환경으로 분리
-> 2. `junsu122/object_width_filter:v2.1` 이미지 빌드 및 Docker Hub 배포
-> 3. 호스트와 네트워크를 공유(`--net=host`)하여 ROS2 토픽 통신 유지
-> 4. `xhost +local:docker` 로 GUI(rviz 등) 출력 허용
-> 5. 다른 PC에서도 `docker pull` 한 줄로 즉시 실행 가능하도록 구성
-
-![docker 아키텍처](./assets/docker_architecture.png)
-<p align="center">&lt;Docker 컨테이너 구조&gt;</p>
-
----
-
 ## 🔧 Trouble Shooting
 
-### 1. [물체를 잡을때의 낮은 정확도]
+### [스캔 시 거리에 따른 YOLO 인식률 저하]
 **증상**
-> yolo에서 인식한 물체의 boundingbox 중심점을 기준으로 grip을 하려고 하니, gripper가 바닥까지 내려가거나 물체를 제대로 잡지 않고 눌러서 비상정지가 발생.
+> 테이블을 ㄹ자로 스캔할 때, 카메라와 물체 사이 거리가 멀어지면 YOLO 객체 인식이 제대로 되지 않음.
 
 **원인**
-> 같은 물체라도 세워져 있느냐, 누워 있느냐에 따라 잡아야하는 부분이 달라짐. gripper가 잡을 수 있는 최대 넓이 보다 물건의 폭이 더 넓으면 잡지 못함.
+> 한 시야에 테이블 전체를 담으려고 카메라를 멀리 두면, 물체가 화면에서 작아져 YOLO가 인식하지 못함.
 
 **해결 방법**
-> 물건마다 가장 얇은 폭을 인식하도록 하여, 물체를 잡을때 가장 성공률이 높은 각도로 잡도록 움직임을 유도시킴.
-
-![그리퍼 각도찾기 알고리즘 - 각도 추정](assets/gripper_angle_1.png)
-<p align="center">&lt;각도 추정 알고리즘&gt;</p>
-
-![그리퍼 각도찾기 알고리즘 - 각도와 물체 매칭](assets/gripper_angle_2.png)
-<p align="center">&lt;각도-물체 매칭&gt;</p>
-
-<table>
-  <tr>
-    <td align="center"><b>문제 상황</b></td>
-    <td align="center"><b>해결 후</b></td>
-  </tr>
-  <tr>
-    <td><img src="./assets/실패.gif"/></td>
-    <td><img src="./assets/성공.gif"/></td>
-  </tr>
-</table>
-
-
----
-
-### 2. [파일을 실행할때마다 opencv 버젼 충돌]
-**증상**
-> 다른 기능 단위 코드들과 합치고 빌드할때마다, opencv 에러로 인해 따로 빌드하던가 여러번 빌드를 해야하는 불편함 발생.
-
-**원인**
-> alphashape, scikit-learn, yolo, mediapipe 등 다양한 library를 사용하면서 버전 충돌 발생
-
-**해결 방법**
-> 여러 library를 사용하는 object_width_filter를 docker로 배포하여, 따로 빌드하지 않고 실행할 수 있게함. 
+> 테이블을 한 번에 보지 않고, 작업공간을 격자로 분할하여 **지그재그(ㄹ자) 경로로 가까이서 순차 스캔**하도록 변경.
+> 각 구간을 근거리에서 촬영해 인식률을 확보하고, 구간별 결과를 누적해 전체 작업공간을 커버.
 
 ---
 
