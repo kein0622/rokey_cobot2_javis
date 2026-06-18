@@ -146,6 +146,44 @@ alias rf='xhost +local:docker && docker run -it --rm --net=host --env="DISPLAY" 
 
 ---
 
+### 🖱️ 브라우저 호버 선택 픽
+
+```
+브라우저: 물체 위 손가락 hover
+    ↓ DataChannel
+webrtc_vision_server.py
+    → /selected_label 발행
+    → 브라우저로 is_picking=True 전송 (모달 표시)
+    ↓
+vision_node.py (_selected_label_cb)
+    → YOLO 탐지 결과에서 원본 좌표 추출
+    → /selected_object 발행
+    ↓
+┌─────────────────────────────────────────┐
+│ 동시 처리                                │
+│  orchestrator_node.py                   │
+│    → PickAndPlace 액션 트리거            │
+│                                         │
+│  vision_node2publish_angle.py           │
+│    → aligned depth + camera_info       │
+│    → /_2d_to_3d_point 발행              │
+│    → publish_angle.py                  │
+│    → /object_angle 발행                 │
+└─────────────────────────────────────────┘
+    ↓
+pick_and_place_node.py
+    HOME → APPROACH
+    → /selected_object 재발행 (각도 재계산)
+    → SPIN_CHUCK (30초 대기, /object_angle 수신)
+    → DESCEND → GRASP → LIFT → GIVE
+    ↓
+orchestrator_node.py → /is_picking=False
+    ↓
+브라우저: "작업 완료" 모달 표시
+```
+
+---
+
 ## 🙋 내 주요 업무
 
 ### 1. [손동작(MediaPipe) 기반 로봇 제어 — `gesture_robot_pkg`]
