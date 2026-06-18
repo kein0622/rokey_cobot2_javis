@@ -149,7 +149,26 @@ JARVIS는 이러한 문제를 해결하기 위해 시니어의 일상을 보조�
 
 ---
 
-## 📁 주요 파일 경로 (담당 파트)
+## 📁 주요 파일 경로
+
+### 전체 시스템
+
+| 파일 | 경로 |
+|---|---|
+| ROS2 런처 | `src/jarvis_bringup/launch/jarvis_main.launch.py` |
+| 비전 노드 | `src/gesture_robot_pkg/gesture_robot_pkg/vision_node.py` |
+| 픽앤플레이스 | `src/gesture_robot_pkg/gesture_robot_pkg/pick_and_place_node.py` |
+| 오케스트레이터 | `src/gesture_robot_pkg/gesture_robot_pkg/orchestrator_node.py` |
+| 각도 계산 | `src/object_width_filter/object_width_filter/vision_node2publish_angle.py` |
+| 음성 의도 | `src/jarvis_voice_pkg/jarvis_voice_pkg/voice_intent_node.py` |
+| 스캔 노드 | `src/jarvis_voice_pkg/jarvis_voice_pkg/workspace_scan_node.py` |
+| 상태 관리 | `src/jarvis_voice_pkg/jarvis_voice_pkg/publisher.py` |
+| 상수 | `src/gesture_robot_pkg/gesture_robot_pkg/constants.py` |
+| WebRTC 제스처 | `jarvis_webrtc/webrtc_server.py` |
+| WebRTC 비전 | `jarvis_webrtc/webrtc_vision_server.py` |
+| 대시보드 | `jarvis-ui/web-app/src/Dashboard.jsx` |
+
+### 담당 파트
 
 | 파일 | 경로 |
 |---|---|
