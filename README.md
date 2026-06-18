@@ -38,7 +38,7 @@ JARVIS는 이러한 문제를 해결하기 위해 시니어의 일상을 보조�
 ### 1. ROS2 빌드
 
 ```bash
-cd ~/cobot_ws/src/web_cobot_ws
+cd ~/rokey_cobot2_javis/web_cobot_ws
 colcon build
 source install/setup.bash
 ```
@@ -46,21 +46,21 @@ source install/setup.bash
 ### 2. ROS2 시스템 실행
 
 ```bash
-source ~/cobot_ws/src/web_cobot_ws/install/setup.bash
+source ~/rokey_cobot2_javis/web_cobot_ws/install/setup.bash
 ros2 launch jarvis_bringup jarvis_main.launch.py
 ```
 
 ### 3. 웹 서버 실행 (별도 터미널)
 
 ```bash
-source ~/cobot_ws/src/web_cobot_ws/install/setup.bash
-bash ~/cobot_ws/src/web_cobot_ws/jarvis_webrtc/jarvis_web.sh
+source ~/rokey_cobot2_javis/web_cobot_ws/install/setup.bash
+bash ~/rokey_cobot2_javis/web_cobot_ws/jarvis_webrtc/jarvis_web.sh
 ```
 
 ### 4. 웹앱 빌드 & 배포 (UI 변경 시)
 
 ```bash
-cd ~/cobot_ws/src/web_cobot_ws/jarvis-ui/web-app
+cd ~/rokey_cobot2_javis/web_cobot_ws/jarvis-ui/web-app
 npm run build
 firebase deploy --only hosting
 ```
@@ -71,7 +71,7 @@ firebase deploy --only hosting
 ### 1. ROS2 빌드
 
 ```bash
-cd ~/Rokey_Cobot2
+cd ~/rokey_cobot2_javis
 colcon build
 source install/setup.bash
 ```
@@ -240,9 +240,11 @@ pick_and_place_node.py
 
 ## 📁 주요 파일 경로
 
+> 레포 루트(`rokey_cobot2_javis/`) 기준 전체 경로입니다.
+
 | 파일 | 경로 |
 |---|---|
-| ROS2 런처 | `src/jarvis_bringup/launch/jarvis_main.launch.py` |
+| ROS2 런처 | `web_cobot_ws/src/jarvis_bringup/launch/jarvis_main.launch.py` |
 | 비전 노드 | `src/gesture_robot_pkg/gesture_robot_pkg/vision_node.py` |
 | 픽앤플레이스 | `src/gesture_robot_pkg/gesture_robot_pkg/pick_and_place_node.py` |
 | 오케스트레이터 | `src/gesture_robot_pkg/gesture_robot_pkg/orchestrator_node.py` |
@@ -251,9 +253,8 @@ pick_and_place_node.py
 | 스캔 노드 | `src/jarvis_voice_pkg/jarvis_voice_pkg/workspace_scan_node.py` |
 | 상태 관리 | `src/jarvis_voice_pkg/jarvis_voice_pkg/publisher.py` |
 | 상수 | `src/gesture_robot_pkg/gesture_robot_pkg/constants.py` |
-| WebRTC 제스처 | `jarvis_webrtc/webrtc_server.py` |
-| WebRTC 비전 | `jarvis_webrtc/webrtc_vision_server.py` |
-| 대시보드 | `jarvis-ui/web-app/src/Dashboard.jsx` |
+| WebRTC 제스처 | `web_cobot_ws/jarvis_webrtc/webrtc_server.py` |
+| WebRTC 비전 | `web_cobot_ws/jarvis_webrtc/webrtc_vision_server.py` |
 
 ---
 
