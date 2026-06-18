@@ -37,6 +37,106 @@ JARVIS는 이러한 문제를 해결하기 위해 시니어의 일상을 보조�
 
 ---
 
+## 🌐 구동 방법 (웹 사용 버젼)
+
+### 1. ROS2 빌드
+
+```bash
+cd ~/cobot_ws/src/web_cobot_ws
+colcon build
+source install/setup.bash
+```
+
+### 2. ROS2 시스템 실행
+
+```bash
+source ~/cobot_ws/src/web_cobot_ws/install/setup.bash
+ros2 launch jarvis_bringup jarvis_main.launch.py
+```
+
+### 3. 웹 서버 실행 (별도 터미널)
+
+```bash
+source ~/cobot_ws/src/web_cobot_ws/install/setup.bash
+bash ~/cobot_ws/src/web_cobot_ws/jarvis_webrtc/jarvis_web.sh
+```
+
+### 4. 웹앱 빌드 & 배포 (UI 변경 시)
+
+```bash
+cd ~/cobot_ws/src/web_cobot_ws/jarvis-ui/web-app
+npm run build
+firebase deploy --only hosting
+```
+
+---
+
+## 💻 구동 방법 (로컬 사용 버젼)
+
+### 1. ROS2 빌드
+
+```bash
+cd ~/Project_Rokey_Cobot2
+colcon build
+source install/setup.bash
+```
+
+### 2. 센서 연동
+
+RealSense 및 dsr01 연결
+
+### 3. ROS2 시스템 실행 (메인 컨트롤러 런치)
+
+```bash
+ros2 launch gesture_robot_pkg gesture_robot.launch.py
+```
+
+### 4. ROS2 시스템 실행 (상태 컨트롤러 런치)
+
+```bash
+ros2 launch robot_state_control robot_state_control.launch.py
+```
+
+### 5. ROS2 시스템 실행 (객체 너비 확인 노드 런치)
+
+```bash
+ros2 launch object_width_filter object_width_filter.launch.py
+```
+
+docker로 대체 가능
+
+```bash
+# 1. 도커 컨테이너의 GUI 출력을 허용 (터미널에 입력)
+xhost +local:docker
+
+# 2. 통신을 위한 환경 변수 설정 (Bag 파일 실행 PC와 동일하게 맞춤)
+export ROS_DOMAIN_ID=95
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+# 3. 최신 이미지 다운로드
+docker pull junsu122/object_width_filter:v2.1
+
+# 4. 컨테이너 실행 (네트워크, 디스플레이, 카메라 권한 포함)
+docker run -it --rm \
+  --net=host \
+  --env="DISPLAY" \
+  --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+  --privileged \
+  junsu122/object_width_filter:v2.1
+
+# 5. 런치 파일 실행 (모든 노드 가동)
+ros2 launch object_width_filter object_width_filter.launch.py
+```
+
+```bash
+# 다른 PC의 ~/.bashrc에 추가
+alias rf='xhost +local:docker && docker run -it --rm --net=host --env="DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" --privileged junsu122/object_width_filter:v2.1'
+```
+
+> 의존성 설치: `pip install -r requirements.txt` (ROS2 Humble 환경)
+
+---
+
 ## 🔄 전체 흐름
 ![전체 아키텍쳐](<./assets/architecture.png>)
 <p align="center">&lt;전체 아키텍처&gt;</p>
@@ -178,30 +278,6 @@ JARVIS는 이러한 문제를 해결하기 위해 시니어의 일상을 보조�
 | 예외 관리 | `src/robot_state_control/robot_state_control/exception_manager_node.py` |
 | 손바닥 복구 | `src/robot_state_control/robot_state_control/hand_recovery.py` |
 | 메인 오케스트레이션 | `src/robot_state_control/robot_state_control/main_node.py` |
-
----
-
-## 💻 구동 방법 (로컬 버전)
-
-```bash
-# 1. 빌드
-cd ~/Project_Rokey_Cobot2
-colcon build
-source install/setup.bash
-
-# 2. 센서 연동 (RealSense 및 dsr01 연결)
-
-# 3. 메인 컨트롤러 런치
-ros2 launch gesture_robot_pkg gesture_robot.launch.py
-
-# 4. 상태 컨트롤러 런치
-ros2 launch robot_state_control robot_state_control.launch.py
-
-# 5. 객체 너비 확인 노드 런치
-ros2 launch object_width_filter object_width_filter.launch.py
-```
-
-> 의존성 설치: `pip install -r requirements.txt` (ROS2 Humble 환경)
 
 ---
 
